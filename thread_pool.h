@@ -234,7 +234,7 @@ namespace ThreadPool
         std::vector<T> msg;
         
     public:
-        WriteMessage(std::vector<T> &&message, std::filesystem::path &&path) : Message<T>{ std::move(path) }, msg{ std::move(msg) } {}
+        WriteMessage(std::vector<T> &&message, std::filesystem::path &&path) : Message<T>{ std::move(path) }, msg{ std::move(message) } {}
         WriteMessage(WriteMessage const&) = delete;
         WriteMessage(WriteMessage&&) = default;
         WriteMessage& operator=(WriteMessage const&) = delete;
@@ -245,6 +245,8 @@ namespace ThreadPool
         {
             std::ofstream stream{ this->path, std::fstream::out | std::fstream::binary };
             stream.write(reinterpret_cast<char const *>(msg.data()), msg.size() * sizeof(T));
+			stream.flush();
+			stream.close();
         }
     };
 

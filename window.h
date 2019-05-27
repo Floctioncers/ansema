@@ -18,7 +18,7 @@ namespace Window
 {
     using Pool = ThreadPool::ThreadPool<std::function<void(void)>>;
     using Pass = CharsPassword::PasswordGenerator;
-    using Trans = AesTransformator::AesTransformator;
+	using File = AesTransformator::AesFile;
     using namespace nana;
     class Window
     {
@@ -36,6 +36,23 @@ namespace Window
 
         Pass &pass;
         Pool &pool;
+
+		void save()
+		{
+			std::string txt{};
+			std::size_t lines = text->text_line_count();
+			for (std::size_t i = 0; i < lines; ++i)
+			{
+				auto temp = text->getline(i);
+				if (temp.has_value())
+					txt.append(temp.value());
+			}
+			//TODO read password from user!
+			File f{"simplekey"};
+			f.Append(std::move(txt));
+			//TODO read file location from user!
+			f.Write("./secret.scrt");
+		}
 
         void generate(std::size_t i)
         {
@@ -75,7 +92,7 @@ namespace Window
             std::unique_ptr<button> btn{ std::make_unique<button>(*window) };
             btn->caption("Save file!");
             btn->events().click([this]() {
-                auto fn = [this]() { /*//TODO*/ };
+				auto fn = [this]() { save(); };
                 pool.Append(std::move(fn));
             });
             return btn;

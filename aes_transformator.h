@@ -102,7 +102,12 @@ namespace AesTransformator
     public:
         AesFile(std::string const &key) : transformator{}, data{}, stream{}
         {
-            transformator.SetKey(GenerateSalt(), key);
+			auto salt = GenerateSalt();
+			for (auto const& item : salt)
+			{
+				data.push_back(static_cast<char>(item));
+			}
+            transformator.SetKey(std::move(salt), key);
         }
         AesFile(AesFile const&) = default;
         AesFile(AesFile&&) = default;
@@ -112,11 +117,13 @@ namespace AesTransformator
 
         void Append(std::string const &text)
         {
-            for (auto const& item : text)
-            {
-                data.push_back(item);
-            }
+			data.append(text);
         }
+
+		void Append(std::string &&text)
+		{
+			data.append(std::move(text));
+		}
 
         void Write(std::filesystem::path const &path)
         {
