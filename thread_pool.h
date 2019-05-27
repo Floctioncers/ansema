@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <streambuf>
 
 namespace ThreadPool
 {
@@ -303,9 +304,20 @@ namespace ThreadPool
 		void operator()() override
 		{
 			std::ifstream stream{ this->path, std::fstream::in | std::fstream::binary };
-			std::istreambuf_iterator<T> begin{ stream };
-			std::istreambuf_iterator<T> end{};
-			std::vector<T> out{ begin, end };
+			std::vector<T> out{};
+			std::istreambuf_iterator<char> begin{ stream };
+			std::istreambuf_iterator<char> end{};
+			while(begin != end)
+			{
+				std::array<char, sizeof(T)> item{};
+				for (std::size_t i = 0; i < sizeof(T); ++i)
+				{
+					item[i] = *begin;
+					++begin;
+				}
+				T* ptr{ reinterpret_cast<T*>(item.data()) };
+				out.push_back(*ptr);
+			}
 			stream.close();
 			msg.Set(std::move(out));
 		}
@@ -351,7 +363,7 @@ namespace ThreadPool
             pool.Append(std::move(out));
         }
 
-		void Read(std::filesystem::path &&path, std::vector<T> &data)
+		void Read(std::filesystem::path &&path, Future<std::vector<T>> &data)
 		{
 			std::unique_ptr<Message<T>> msg{ std::make_unique<ReadMessage<T>>(data, std::move(path)) };
 			MessageHandler<T> out{ std::move(msg) };

@@ -14,6 +14,8 @@
 
 namespace AesTransformator
 {
+	template<typename T>
+	using Future = ThreadPool::Future<T>;
 
     std::array<unsigned char, 32> GenerateKey(std::array<unsigned char, 32> const &salt, std::string const &password)
     {
@@ -98,16 +100,14 @@ namespace AesTransformator
         using IOStream = ThreadPool::ThreadStream<unsigned char>;
         AesTransformator transformator;
         std::string data;
+		std::array<unsigned char, 32> salt;
+		std::string key;
         IOStream stream;
+
     public:
-        AesFile(std::string const &key) : transformator{}, data{}, stream{}
+        AesFile(std::string const &key) : transformator{}, data{}, stream{}, salt{ GenerateSalt() }, key{ key }
         {
-			auto salt = GenerateSalt();
-			for (auto const& item : salt)
-			{
-				data.push_back(static_cast<char>(item));
-			}
-            transformator.SetKey(std::move(salt), key);
+            transformator.SetKey(salt, key);
         }
         AesFile(AesFile const&) = default;
         AesFile(AesFile&&) = default;
@@ -125,16 +125,61 @@ namespace AesTransformator
 			data.append(std::move(text));
 		}
 
+		std::string Get()
+		{
+			std::string out{ std::move(data) };
+			data.clear();
+			return out;
+		}
+
         void Write(std::filesystem::path const &path)
         {
             auto temp{ transformator.Encrypt(data) };
+
             std::vector<unsigned char> out{};
             out.reserve(temp.size());
+			for (auto const& item : salt)
+			{
+				out.push_back(item);
+			}
+
             for (auto &&item : temp)
                 out.push_back(std::move(item));
+
             auto p{ path };
             stream.Write(std::move(p), std::move(out));
         }
+
+		void Read(std::filesystem::path const &path)
+		{
+			auto p{ path };
+			Future<std::vector<unsigned char>> in{};
+			stream.Read(std::move(p), in);
+
+			while (in.IsEmpty())
+			{
+				std::this_thread::yield();
+			}
+
+			std::optional<std::vector<unsigned char>> read{ in.Get() };
+			if (!read.has_value())
+				return;
+			std::vector<unsigned char> value{ read.value() };
+			for (std::size_t i = 0; i < salt.size(); ++i)
+			{
+				salt[i] = value[i];
+			}
+
+			std::string encrypted{};
+			encrypted.reserve(value.size() - 32);
+			for (std::size_t i = salt.size(); i < value.size(); ++i)
+			{
+				encrypted.push_back(value[i]);
+			}
+
+			transformator.SetKey(salt, key);
+			data = transformator.Decrypt(encrypted);
+		}
     };
 }
 

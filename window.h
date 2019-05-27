@@ -54,6 +54,18 @@ namespace Window
 			f.Write("./secret.scrt");
 		}
 
+		void open()
+		{
+			//TODO read password from user!
+			File f{ "simplekey" };
+			//TODO read file location from user!
+			f.Read("./secret.scrt");
+			std::string txt{ f.Get() };
+			text->select(true);
+			text->del();
+			text->append(txt, false);
+		}
+
         void generate(std::size_t i)
         {
             auto const in{ input->getline(0) };
@@ -103,7 +115,7 @@ namespace Window
             std::unique_ptr<button> btn{ std::make_unique<button>(*window) };
             btn->caption("Open file!");
             btn->events().click([this]() {
-                auto fn = [this]() { /*//TODO*/ };
+				auto fn = [this]() { open(); };
                 pool.Append(std::move(fn));
             });
             return btn;
