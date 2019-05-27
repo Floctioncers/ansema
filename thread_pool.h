@@ -6,6 +6,7 @@
 #include <atomic>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 
 namespace ThreadPool
 {
@@ -208,6 +209,42 @@ namespace ThreadPool
         }
     };
 
+	template<typename T>
+	class Future
+	{
+	private:
+		T value;
+		std::atomic<bool> shared;
+	public:
+		template<typename... Args>
+		Future(Args... args) : value{ T{std::forward<Args>(args)...} }, shared{ false } {}
+		Future(Future const&) = delete;
+		Future(Future&&) = default;
+		Future& operator=(Future const&) = delete;
+		Future& operator=(Future&&) = default;
+		virtual ~Future() = default;
+
+		std::optional<T> Get()
+		{
+			bool expected{ true };
+			if (!shared.compare_exchange_strong(expected, false))
+				return std::nullopt;
+			return std::make_optional<T>(std::move(value));
+		}
+
+		bool IsEmpty()
+		{
+			return !(shared.load());
+		}
+
+		void Set(T &&val)
+		{
+			bool expected{ false };
+			if (!shared.compare_exchange_strong(expected, true))
+				return;
+			value = std::move(val);
+		}
+	};
 
 
     template<typename T>
@@ -250,6 +287,30 @@ namespace ThreadPool
         }
     };
 
+	template<typename T>
+	class ReadMessage : public Message<T>
+	{
+	private:
+		Future<std::vector<T>>& msg;
+	public:
+		ReadMessage(Future<std::vector<T>> &message, std::filesystem::path &&path) : Message<T>{ std::move(path) }, msg{ message } {}
+		ReadMessage(ReadMessage const&) = delete;
+		ReadMessage(ReadMessage&&) = default;
+		ReadMessage& operator=(ReadMessage const&) = delete;
+		ReadMessage& operator=(ReadMessage&&) = default;
+		~ReadMessage() override = default;
+
+		void operator()() override
+		{
+			std::ifstream stream{ this->path, std::fstream::in | std::fstream::binary };
+			std::istreambuf_iterator<T> begin{ stream };
+			std::istreambuf_iterator<T> end{};
+			std::vector<T> out{ begin, end };
+			stream.close();
+			msg.Set(std::move(out));
+		}
+	};
+
     template<typename T>
     class MessageHandler
     {
@@ -289,6 +350,13 @@ namespace ThreadPool
             MessageHandler<T> out{ std::move(msg) };
             pool.Append(std::move(out));
         }
+
+		void Read(std::filesystem::path &&path, std::vector<T> &data)
+		{
+			std::unique_ptr<Message<T>> msg{ std::make_unique<ReadMessage<T>>(data, std::move(path)) };
+			MessageHandler<T> out{ std::move(msg) };
+			pool.Append(std::move(out));
+		}
     };
 
     template<typename T>
