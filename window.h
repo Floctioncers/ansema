@@ -46,6 +46,7 @@ namespace Window
 				auto temp = text->getline(i);
 				if (temp.has_value())
 					txt.append(temp.value());
+				txt.push_back('\n');
 			}
 			//TODO read password from user!
 			File f{"simplekey"};
