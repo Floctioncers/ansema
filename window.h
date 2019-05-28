@@ -37,6 +37,16 @@ namespace Window
         Pass &pass;
         Pool &pool;
 
+        std::optional<std::string> askForPassword()
+        {
+            inputbox input{ *window, "Please input your password.", "Password" };
+            inputbox::text password{ "Password:" };
+            password.mask_character('*');
+            if (input.show_modal(password))
+                return std::make_optional<std::string>(password.value());
+            return std::nullopt;
+        }
+
 		void save()
 		{
 			std::string txt{};
@@ -48,8 +58,10 @@ namespace Window
 					txt.append(temp.value());
 				txt.push_back('\n');
 			}
-			//TODO read password from user!
-			File f{"simplekey"};
+            auto password{ askForPassword() };
+            if (!password.has_value())
+                return;
+			File f{ password.value() };
 			f.Append(std::move(txt));
 			//TODO read file location from user!
 			f.Write("./secret.scrt");
@@ -57,11 +69,13 @@ namespace Window
 
 		void open()
 		{
-			//TODO read password from user!
-			File f{ "simplekey" };
+            auto password{ askForPassword() };
+            if (!password.has_value())
+                return;
+            File f{ password.value() };
 			//TODO read file location from user!
-			f.Read("./secret.scrt");
-			std::string txt{ f.Get() };
+            f.Read("./secret.scrt"); 
+            std::string txt{ f.Get() };
 			text->select(true);
 			text->del();
 			text->append(txt, false);

@@ -178,7 +178,13 @@ namespace AesTransformator
 			}
 
 			transformator.SetKey(salt, key);
-			data = transformator.Decrypt(encrypted);
+            try {
+                data = transformator.Decrypt(encrypted);
+            }
+            catch (CryptoPP::InvalidCiphertext &ex)
+            {
+                data = std::string{};
+            }
 		}
     };
 }
