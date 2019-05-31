@@ -37,6 +37,20 @@ namespace Window
         Pass &pass;
         Pool &pool;
 
+        std::optional<std::filesystem::path> askForFile(bool open)
+        {
+            filebox box{ *window, open };
+            box.allow_multi_select(false);
+            box.add_filter("Secret file", "*.scrt");
+            box.init_path(".");
+            box.init_file("my_secret.scrt");
+            auto out = box.show();
+            if (out.size() == 0)
+                return std::nullopt;
+            else
+                return std::make_optional<std::filesystem::path>(out.back());
+        }
+
         std::optional<std::string> askForPassword()
         {
             inputbox input{ *window, "Please input your password.", "Password" };
@@ -63,18 +77,22 @@ namespace Window
                 return;
 			File f{ password.value() };
 			f.Append(std::move(txt));
-			//TODO read file location from user!
-			f.Write("./secret.scrt");
+            auto file{ askForFile(false) };
+            if (!file.has_value())
+                return;
+			f.Write(file.value());
 		}
 
 		void open()
 		{
+            auto file{ askForFile(true) };
+            if (!file.has_value())
+                return;
             auto password{ askForPassword() };
             if (!password.has_value())
                 return;
             File f{ password.value() };
-			//TODO read file location from user!
-            f.Read("./secret.scrt"); 
+            f.Read(file.value()); 
             std::string txt{ f.Get() };
 			text->select(true);
 			text->del();

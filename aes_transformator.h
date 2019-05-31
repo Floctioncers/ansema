@@ -183,7 +183,7 @@ namespace AesTransformator
             }
             catch (CryptoPP::InvalidCiphertext &ex)
             {
-                data = std::string{};
+                data = std::string{ ex.GetWhat() };
             }
 		}
     };
