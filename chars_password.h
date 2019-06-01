@@ -44,7 +44,7 @@ namespace CharsPassword
             {
                 auto const ref{ map.at(c) };
                 uint32_t const size = static_cast<uint32_t>(ref.size());
-                CryptoPP::Integer const max{ CryptoPP::Integer::Sign::POSITIVE, size - 1 };
+                CryptoPP::Integer const max{ CryptoPP::Integer::Sign::POSITIVE, static_cast<CryptoPP::lword>(size - 1) };
                 CryptoPP::Integer ith{ rng, CryptoPP::Integer::Zero(), max };
                 return std::make_optional<char>(ref[static_cast<std::size_t>(ith.ConvertToLong())]);
             }
