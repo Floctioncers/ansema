@@ -130,6 +130,16 @@ namespace Window
             });
         }
 
+        void add()
+        {
+            window.Layout()["input"] << *input;
+            window.Layout()["button"] << *generator;
+            for (auto &item : output)
+            {
+                window.Layout()["output"] << *item;
+            }
+        }
+
     public:
         PasswordGenerator(Window &window, Pass& pass, Pool& pool) :
             pool{ pool },
@@ -143,6 +153,7 @@ namespace Window
             makeInput();
             makeOutput();
             makeGenerator();
+            add();
         }
 
         PasswordGenerator(PasswordGenerator const&) = delete;
@@ -150,16 +161,6 @@ namespace Window
         PasswordGenerator& operator=(PasswordGenerator const&) = delete;
         PasswordGenerator& operator=(PasswordGenerator&&) = default;
         ~PasswordGenerator() = default;
-
-        void Add()
-        {
-            window.Layout()["input"] << *input;
-            window.Layout()["button"] << *generator;
-            for (auto &item : output)
-            {
-                window.Layout()["output"] << *item;
-            }
-        }
     };
 
     class FileManager
@@ -256,6 +257,13 @@ namespace Window
         {
 
         }
+
+        void add()
+        {
+            window.Layout()["text"] << *text;
+            window.Layout()["open"] << *opener;
+            window.Layout()["save"] << *saver;
+        }
     public:
         FileManager(Window& window, Pool& pool) :
             pool{ pool },
@@ -267,6 +275,7 @@ namespace Window
             makeSaver();
             makeOpener();
             makeText();
+            add();
         }
 
         FileManager(FileManager const&) = delete;
@@ -274,13 +283,6 @@ namespace Window
         FileManager& operator=(FileManager const&) = delete;
         FileManager& operator=(FileManager&&) = default;
         ~FileManager() = default;
-
-        void Add()
-        {
-            window.Layout()["text"] << *text;
-            window.Layout()["open"] << *opener;
-            window.Layout()["save"] << *saver;
-        }
     };
 }
 #endif

@@ -9,9 +9,7 @@ int main()
     ThreadPool::ThreadPool<std::function<void(void)>> pool{ 2 };
     Window::Window w{};
     Window::PasswordGenerator generator{ w, pass, pool };
-    generator.Add();
     Window::FileManager manager{w, pool };
-    manager.Add();
     pool.Start();
     w.Exec();
 }
