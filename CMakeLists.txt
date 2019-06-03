@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.14)
+project(ansema)
+add_executable(ansema main.cpp)
+add_subdirectory(ext/cryptopp)
+target_link_libraries(ansema cryptopp-static)
+add_subdirectory(ext/nana)
+target_link_libraries(ansema nana)
+target_include_directories(ansema PRIVATE ext)

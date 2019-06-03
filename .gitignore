@@ -1,9 +1,1 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/.vs
-/ext
-/x64/Debug
-/chars_password.vcxproj.user
-/x64/Release
+﻿/mingw

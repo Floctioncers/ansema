@@ -58,7 +58,7 @@ unsigned long int getauxval(unsigned long int) { return 0; }
 
 // Visual Studio 2008 and below is missing _xgetbv. See x64dll.asm for the body.
 #if defined(_MSC_VER) && _MSC_VER <= 1500 && defined(_M_X64)
-extern "C" unsigned long long __fastcall ExtendedControlRegister(unsigned int);
+extern "C" unsigned long long __fastcall XGETBV64(unsigned int);
 #endif
 
 ANONYMOUS_NAMESPACE_BEGIN
@@ -373,7 +373,7 @@ void DetectX86Features()
 
 // Visual Studio 2008 and below lack xgetbv
 #elif defined(_MSC_VER) && _MSC_VER <= 1500 && defined(_M_X64)
-		word64 xcr0 = ExtendedControlRegister(0);
+		word64 xcr0 = XGETBV64(0);
 		g_hasAVX = (xcr0 & YMM_FLAG) == YMM_FLAG;
 
 // Downlevel SunCC
@@ -519,6 +519,7 @@ extern bool CPU_ProbeSM3();
 extern bool CPU_ProbeSM4();
 extern bool CPU_ProbePMULL();
 
+// https://github.com/torvalds/linux/blob/master/arch/arm/include/uapi/asm/hwcap.h
 // https://github.com/torvalds/linux/blob/master/arch/arm64/include/uapi/asm/hwcap.h
 #ifndef HWCAP_ARMv7
 # define HWCAP_ARMv7 (1 << 29)
@@ -526,8 +527,8 @@ extern bool CPU_ProbePMULL();
 #ifndef HWCAP_ASIMD
 # define HWCAP_ASIMD (1 << 1)
 #endif
-#ifndef HWCAP_ARM_NEON
-# define HWCAP_ARM_NEON 4096
+#ifndef HWCAP_NEON
+# define HWCAP_NEON (1 << 12)
 #endif
 #ifndef HWCAP_CRC32
 # define HWCAP_CRC32 (1 << 7)
@@ -574,15 +575,13 @@ extern bool CPU_ProbePMULL();
 
 inline bool CPU_QueryARMv7()
 {
-#if defined(__aarch32__) || defined(__aarch64__)
-	// ARMv7 or above
-	return true;
-#elif defined(__ANDROID__) && defined(__arm__)
+#if defined(__ANDROID__) && defined(__arm__)
 	if (((android_getCpuFamily() & ANDROID_CPU_FAMILY_ARM) != 0) &&
 		((android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_ARMv7) != 0))
 		return true;
 #elif defined(__linux__) && defined(__arm__)
-	if ((getauxval(AT_HWCAP) & HWCAP_ARMv7) != 0)
+	if ((getauxval(AT_HWCAP) & HWCAP_ARMv7) != 0 ||
+	    (getauxval(AT_HWCAP) & HWCAP_NEON) != 0)
 		return true;
 #elif defined(__APPLE__) && defined(__arm__)
 	// Apple hardware is ARMv7 or above.
@@ -608,7 +607,7 @@ inline bool CPU_QueryNEON()
 	if ((getauxval(AT_HWCAP2) & HWCAP2_ASIMD) != 0)
 		return true;
 #elif defined(__linux__) && defined(__arm__)
-	if ((getauxval(AT_HWCAP) & HWCAP_ARM_NEON) != 0)
+	if ((getauxval(AT_HWCAP) & HWCAP_NEON) != 0)
 		return true;
 #elif defined(__APPLE__) && defined(__aarch64__)
 	// Core feature set for Aarch32 and Aarch64.
