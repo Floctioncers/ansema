@@ -1,3 +1,5 @@
 ﻿/mingw
 /.vs
 /msvc
+.vscode/ipch/49008da47d2a6a25/MAIN.ipch
+.vscode/ipch/49008da47d2a6a25/mmap_address.bin
