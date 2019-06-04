@@ -30,7 +30,7 @@ namespace Window
         {
             layout->div(
                 "<weight=5>"
-                "<vert weight=250<weight=5><weight=25<open weight=50%><save weight=50%>><input weight=25><button weight=25><output vert arrange=[25, repeated]><weight=5>>"
+                "<vert weight=250<weight=5><weight=25<open weight=33%><save weight=33%><saveAs weight=33%>><input weight=25><button weight=25><output vert arrange=[25, repeated]><weight=5>>"
                 "<weight=5>"
                 "<vert<weight=5><text><weight=5>>"
                 "<weight=5>");
@@ -167,8 +167,12 @@ namespace Window
     {
     private:
         std::unique_ptr<button> saver;
+        std::unique_ptr<button> saveAser;
         std::unique_ptr<button> opener;
         std::unique_ptr<textbox> text;
+
+        std::optional<std::filesystem::path> path;
+        std::optional<std::string> key;
 
         Window& window;
         Pool &pool;
@@ -199,14 +203,14 @@ namespace Window
 
         void open()
         {
-            auto file{ getFile(true) };
-            if (!file.has_value())
+            path = getFile(true);
+            if (!path.has_value())
                 return;
-            auto password{ getPassword() };
-            if (!password.has_value())
+            key = getPassword();
+            if (!key.has_value())
                 return;
-            File f{ password.value() };
-            f.Read(file.value());
+            File f{ key.value() };
+            f.Read(path.value());
             std::string txt{ f.Get() };
             text->select(true);
             text->del();
@@ -214,6 +218,28 @@ namespace Window
         }
 
         void save()
+        {
+            if (!key.has_value())
+                key = getPassword();
+            if (!key.has_value())
+                return;
+            if (!path.has_value())
+                path = getFile(false);
+            if (key.has_value() && path.has_value())
+                saveAs(path.value(), key.value());
+        }
+
+        void saveAs()
+        {
+            key = getPassword();
+            if (!key.has_value())
+                return;
+            path = getFile(false);
+            if (key.has_value() && path.has_value())
+                saveAs(path.value(), key.value()); 
+        }
+        
+        void saveAs(std::filesystem::path const &path, std::string const &key)
         {
             std::string txt{};
             std::size_t lines = text->text_line_count();
@@ -224,15 +250,9 @@ namespace Window
                     txt.append(temp.value());
                 txt.push_back('\n');
             }
-            auto password{ getPassword() };
-            if (!password.has_value())
-                return;
-            File f{ password.value() };
+            File f{ key };
             f.Append(std::move(txt));
-            auto file{ getFile(false) };
-            if (!file.has_value())
-                return;
-            f.Write(file.value());
+            f.Write(path);
         }
 
         void makeSaver()
@@ -240,6 +260,15 @@ namespace Window
             saver->caption("Save file!");
             saver->events().click([this]() {
                 auto fn = [this]() { save(); };
+                pool.Append(std::move(fn));
+            });
+        }
+
+        void makeSaveAser()
+        {
+            saveAser->caption("Save file as..!");
+            saveAser->events().click([this]() {
+                auto fn = [this]() { saveAs(); };
                 pool.Append(std::move(fn));
             });
         }
@@ -263,16 +292,19 @@ namespace Window
             window.Layout()["text"] << *text;
             window.Layout()["open"] << *opener;
             window.Layout()["save"] << *saver;
+            window.Layout()["saveAs"] << *saveAser;
         }
     public:
         FileManager(Window& window, Pool& pool) :
             pool{ pool },
             window{ window },
             saver{ std::make_unique<button>(window.Form()) },
+            saveAser{ std::make_unique<button>(window.Form()) },
             opener{ std::make_unique<button>(window.Form()) },
             text{ std::make_unique<textbox>(window.Form()) }
         {
             makeSaver();
+            makeSaveAser();
             makeOpener();
             makeText();
             add();
