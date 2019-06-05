@@ -203,12 +203,14 @@ namespace Window
 
         void open()
         {
-            path = getFile(true);
-            if (!path.has_value())
+            auto tempPath = getFile(true);
+            if (!tempPath.has_value())
                 return;
-            key = getPassword();
-            if (!key.has_value())
+            auto tempKey = getPassword();
+            if (!tempKey.has_value())
                 return;
+			key = std::move(tempKey);
+			path = std::move(tempPath);
             File f{ key.value() };
             f.Read(path.value());
             std::string txt{ f.Get() };
@@ -231,12 +233,16 @@ namespace Window
 
         void saveAs()
         {
-            key = getPassword();
-            if (!key.has_value())
+            auto tempKey = getPassword();
+            if (!tempKey.has_value())
                 return;
-            path = getFile(false);
-            if (key.has_value() && path.has_value())
-                saveAs(path.value(), key.value()); 
+            auto tempPath = getFile(false);
+			if (tempKey.has_value() && tempPath.has_value())
+			{
+				key = std::move(tempKey);
+				path = std::move(tempPath);
+				saveAs(path.value(), key.value());
+			}
         }
         
         void saveAs(std::filesystem::path const &path, std::string const &key)
