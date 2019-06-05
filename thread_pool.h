@@ -111,8 +111,15 @@ namespace ThreadPool
 
         std::unique_ptr<T> Pop()
         {
-            Node<T> *node{ head.load() };
-            head.store(node->Tail());
+			Node<T> *node;
+			Node<T> *tail;
+			do
+			{
+				node = head.load();
+				if (node == nullptr)
+					return nullptr;
+				tail = node->Tail();
+			} while (!head.compare_exchange_strong(node, tail));
             T* val{ node->Value() };
             auto wait{ used.load() };
 
@@ -121,11 +128,7 @@ namespace ThreadPool
                 wait = used.load();
             }
 
-            Node<T> *current{ head.load() };
-            AppendNode(node->Tail());
-
-            if (current != nullptr)
-                delete node;
+            delete node;
             return std::unique_ptr<T>{ val };
         }
 
