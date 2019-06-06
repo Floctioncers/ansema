@@ -4,6 +4,8 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -146,6 +148,8 @@ namespace ThreadPool
         std::vector<std::thread> threads;
         Queue<T> commands;
         std::atomic<bool> run;
+		std::condition_variable cnd;
+		std::mutex mtx;
 
         void Process()
         {
@@ -154,7 +158,8 @@ namespace ThreadPool
             {
                 if (commands.Empty())
                 {
-                    std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
+					std::unique_lock<std::mutex> lck{ mtx };
+					cnd.wait(lck);
                 }
                 else
                 {
@@ -166,16 +171,17 @@ namespace ThreadPool
             }
         }
     public:
-        ThreadPool(std::size_t threads) : threads{ threads }, commands{}, run{ false } {}
+		ThreadPool(std::size_t threads) : threads{ threads }, commands{}, run{ false }, cnd{}, mtx{} {}
         ThreadPool(ThreadPool const&) = delete;
         ThreadPool(ThreadPool&&) = delete;
         ThreadPool& operator=(ThreadPool const&) = delete;
         ThreadPool& operator=(ThreadPool&&) = delete;
         ~ThreadPool()
-        {
+        {			
             for (std::size_t i = 0; i < threads.size(); ++i)
             {
                 run.store(false);
+				cnd.notify_all();
                 if (threads[i].joinable())
                 {
                     threads[i].join();
@@ -186,6 +192,7 @@ namespace ThreadPool
         void Stop()
         {
             run.store(false);
+			cnd.notify_all();
         }
 
         bool IsRunning()
@@ -205,11 +212,13 @@ namespace ThreadPool
         void Append(T&& fn)
         {
             commands.Append(std::move(fn));
+			cnd.notify_all();
         }
 
         void Append(T const &fn)
         {
             commands.Append(fn);
+			cnd.notify_all();
         }
     };
 
