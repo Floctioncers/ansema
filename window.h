@@ -88,14 +88,18 @@ namespace Window
     }
     inline std::unordered_map<wchar_t, KeyPress::Key> KeyPress::map{};
 
-    template<typename T>
-    void EmitToParent(T const& item)
+    template<typename T, typename U>
+    std::unique_ptr<T> GenerateChild(U const &parent)
     {
-        item.events().key_char([&item](nana::arg_keyboard const& keyboard)
+        std::unique_ptr<T> ptr{ std::make_unique<T>(parent) };
+        T* view{ ptr.get() };
+        view->events().key_char([view](nana::arg_keyboard const& keyboard)
         {
-            nana::API::emit_event(nana::event_code::key_press, item.parent(), keyboard);
+            nana::API::emit_event(nana::event_code::key_press, view->parent(), keyboard);
         });
+        return std::move(ptr);
     }
+
     class Window
     {
     private:
@@ -202,7 +206,6 @@ namespace Window
         {
             input->caption("aaa-AAA-nnn-xxx-XXX");
             input->multi_lines(false);
-            EmitToParent(*input);
         }
 
         void makeOutput()
@@ -216,7 +219,6 @@ namespace Window
                 output.back()->events().dbl_click([this, pos]() {
                     copy(pos);
                 });
-                EmitToParent(*(output.back()));
             }
         }
 
@@ -227,7 +229,6 @@ namespace Window
                 auto fn = [this]() { generate(); };
                 pool.Append(std::move(fn));
             });
-            EmitToParent(*generator);
         }
 
         void add()
@@ -246,9 +247,9 @@ namespace Window
             pass{ pass },
             window{ window },
             outputSize{ 9 },
-            input{ std::make_unique<textbox>(window.Form()) },
+            input{ GenerateChild<textbox>(window.Form()) },
             output{},
-            generator{ std::make_unique<button>(window.Form()) }
+            generator{ GenerateChild<button>(window.Form()) }
         {
             makeInput();
             makeOutput();
@@ -368,7 +369,6 @@ namespace Window
                 auto fn = [this]() { save(); };
                 pool.Append(std::move(fn));
             });
-            EmitToParent(*saver);
         }
 
         void makeSaveAser()
@@ -378,7 +378,6 @@ namespace Window
                 auto fn = [this]() { saveAs(); };
                 pool.Append(std::move(fn));
             });
-            EmitToParent(*saveAser);
         }
 
         void makeOpener()
@@ -388,12 +387,11 @@ namespace Window
                 auto fn = [this]() { open(); };
                 pool.Append(std::move(fn));
             });
-            EmitToParent(*opener);
         }
 
         void makeText()
         {
-            EmitToParent(*text);
+
         }
 
         void add()
@@ -427,10 +425,10 @@ namespace Window
         FileManager(Window& window, Pool& pool) :
             pool{ pool },
             window{ window },
-            saver{ std::make_unique<button>(window.Form()) },
-            saveAser{ std::make_unique<button>(window.Form()) },
-            opener{ std::make_unique<button>(window.Form()) },
-            text{ std::make_unique<textbox>(window.Form()) }
+            saver{ GenerateChild<button>(window.Form()) },
+            saveAser{ GenerateChild<button>(window.Form()) },
+            opener{ GenerateChild<button>(window.Form()) },
+            text{ GenerateChild<textbox>(window.Form()) }
         {
             makeSaver();
             makeSaveAser();
