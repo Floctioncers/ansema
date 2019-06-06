@@ -49,14 +49,12 @@ namespace ThreadPool
 
         void Append(Node<T> *item)
         {
-            Node<T> *last{ nullptr };
+            Node<T> *last;
             Node<T> *null{ nullptr };
-            std::atomic<Node<T>*> test{ nullptr };
             do
             {
                 last = Last();
-                test.store(last->next.load());
-            } while (!test.compare_exchange_weak(null, item));
+            } while (!last->next.compare_exchange_weak(null, item));
         }
 
         Node<T> *Tail()
