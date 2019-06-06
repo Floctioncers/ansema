@@ -8,6 +8,7 @@
 #include <optional>
 #include <functional>
 #include <vector>
+#include <unordered_map>
 #include <nana/gui.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/button.hpp>
@@ -20,11 +21,87 @@ namespace Window
     using Pass = CharsPassword::PasswordGenerator;
 	using File = AesTransformator::AesFile;
     using namespace nana;
+    class KeyPress
+    {
+    public:
+        enum class Key : std::size_t { Invalid, Escape };
+    private:
+        static std::unordered_map<wchar_t, Key> map;
+        Key key;
+        bool shift;
+        
+        void setUp()
+        {
+            if (map.size() != 0)
+                return;
+            map['\x1b'] = Key::Escape;
+        }
+    public:
+        KeyPress() : key{ Key::Invalid }, shift{ false } { setUp(); }
+        KeyPress(KeyPress const&) = default;
+        KeyPress(KeyPress&&) = default;
+        KeyPress& operator=(KeyPress const&) = default;
+        KeyPress& operator=(KeyPress&&) = default;
+        ~KeyPress() = default;
+
+        void setKey(Key key)
+        {
+            this->key = key;
+        }
+
+        void setKey(wchar_t c)
+        {
+            if (map.find(c) != map.cend())
+            {
+                key = map[c];
+            }
+        }
+        void setShift(bool s)
+        {
+            shift = std::move(s);
+        }
+
+        std::size_t Hash() const
+        {
+            std::size_t times = 0;
+            if (shift)
+                ++times;
+            std::hash<std::size_t> h{};
+            return h(static_cast<std::size_t>(key)) << times;
+        }
+
+        bool Equals(KeyPress const& b) const
+        {
+            return (b.key == key) && (b.shift == shift);
+        }
+    };
+    struct KeyPressHash
+    {
+        std::size_t operator()(KeyPress const& k) const
+        {
+            return k.Hash();
+        }
+    };
+    bool operator==(KeyPress const& a, KeyPress const& b)
+    {
+        return a.Equals(b);
+    }
+    inline std::unordered_map<wchar_t, KeyPress::Key> KeyPress::map{};
+
+    template<typename T>
+    void EmitToParent(T const& item)
+    {
+        item.events().key_char([&item](nana::arg_keyboard const& keyboard)
+        {
+            nana::API::emit_event(nana::event_code::key_press, item.parent(), keyboard);
+        });
+    }
     class Window
     {
     private:
         std::unique_ptr<form> window;
         std::unique_ptr<place> layout;
+        std::unordered_map<KeyPress, std::function<void(void)>, KeyPressHash> map;
 
         void makeLayout()
         {
@@ -35,12 +112,27 @@ namespace Window
                 "<vert<weight=5><text><weight=5>>"
                 "<weight=5>");
         }
+        void makeWindow()
+        {
+            window->events().key_press.connect_unignorable([this](nana::arg_keyboard const& keyboard)
+            {
+                KeyPress key{};
+                key.setKey(keyboard.key);
+                key.setShift(keyboard.shift);
+                if (map.find(key) != map.cend())
+                {
+                    map[key]();
+                }
+            });
+        }
 
     public:
         Window() :
             window{ std::make_unique<form>(API::make_center(500, 310)) },
-            layout{ std::make_unique<place>(*window) }
+            layout{ std::make_unique<place>(*window) },
+            map{}
         {
+            makeWindow();
             makeLayout();
         };
 
@@ -58,6 +150,11 @@ namespace Window
         place& Layout()
         {
             return *layout;
+        }
+
+        void Register(KeyPress const &key, std::function<void(void)> &&fn)
+        {
+            map[key] = std::move(fn);
         }
 
         void Exec()
@@ -105,6 +202,7 @@ namespace Window
         {
             input->caption("aaa-AAA-nnn-xxx-XXX");
             input->multi_lines(false);
+            EmitToParent(*input);
         }
 
         void makeOutput()
@@ -118,6 +216,7 @@ namespace Window
                 output.back()->events().dbl_click([this, pos]() {
                     copy(pos);
                 });
+                EmitToParent(*(output.back()));
             }
         }
 
@@ -128,6 +227,7 @@ namespace Window
                 auto fn = [this]() { generate(); };
                 pool.Append(std::move(fn));
             });
+            EmitToParent(*generator);
         }
 
         void add()
@@ -268,6 +368,7 @@ namespace Window
                 auto fn = [this]() { save(); };
                 pool.Append(std::move(fn));
             });
+            EmitToParent(*saver);
         }
 
         void makeSaveAser()
@@ -277,6 +378,7 @@ namespace Window
                 auto fn = [this]() { saveAs(); };
                 pool.Append(std::move(fn));
             });
+            EmitToParent(*saveAser);
         }
 
         void makeOpener()
@@ -286,11 +388,12 @@ namespace Window
                 auto fn = [this]() { open(); };
                 pool.Append(std::move(fn));
             });
+            EmitToParent(*opener);
         }
 
         void makeText()
         {
-
+            EmitToParent(*text);
         }
 
         void add()
@@ -299,6 +402,26 @@ namespace Window
             window.Layout()["open"] << *opener;
             window.Layout()["save"] << *saver;
             window.Layout()["saveAs"] << *saveAser;
+            auto fn = [this]() { hide(); };
+            auto gn = [this]() { show(); };
+            KeyPress hideShortCut{};
+            hideShortCut.setKey(KeyPress::Key::Escape);
+            hideShortCut.setShift(false);
+            KeyPress showShortCut{};
+            showShortCut.setKey(KeyPress::Key::Escape);
+            showShortCut.setShift(true);
+            window.Register(hideShortCut, std::move(fn));
+            window.Register(showShortCut, std::move(gn));
+        }
+
+        void hide()
+        {
+            text->hide();
+        }
+
+        void show()
+        {
+            text->show();
         }
     public:
         FileManager(Window& window, Pool& pool) :
