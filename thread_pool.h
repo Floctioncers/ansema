@@ -154,7 +154,7 @@ namespace ThreadPool
             {
                 if (commands.Empty())
                 {
-                    std::this_thread::yield();
+                    std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
                 }
                 else
                 {
