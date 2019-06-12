@@ -4,6 +4,7 @@
 #include "thread_pool.h"
 #include "chars_password.h"
 #include "aes_transformator.h"
+#include "parser.h"
 
 #include <optional>
 #include <functional>

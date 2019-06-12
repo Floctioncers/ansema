@@ -7,11 +7,13 @@
 
 namespace Parser
 {
+    using List = std::vector<std::pair<std::size_t, std::size_t>>;
+    using Block = std::pair<std::pair<std::size_t, std::size_t>, std::string>;
     class Parser
     {
     private:
         static std::string const whitespace;
-        std::vector<std::pair<std::size_t, std::size_t>> list;
+        List list;
         std::string const& text;
         std::size_t current;
 
@@ -65,7 +67,7 @@ namespace Parser
         Parser& operator=(Parser&&) = default;
         ~Parser() = default;
          
-        std::vector<std::pair<std::size_t, std::size_t>> GetTokens()
+        List GetTokens()
         {
             FindTokens();
             if (list.size() > 0)
@@ -75,12 +77,42 @@ namespace Parser
                     list.pop_back();
                 }
             }
-            std::vector<std::pair<std::size_t, std::size_t>> out = std::move(list);
+            List out = std::move(list);
             list.clear();
             current = 0;
             return out;
         }    
+    };
 
+    class Transformator
+    {
+    private:
+        std::vector<Block> blocks;
+        std::string const& text;
+    public:
+        Transformator(std::string const &text) : text{ text }, blocks{} {}
+        Transformator(Transformator const&) = default;
+        Transformator(Transformator&&) = default;
+        Transformator& operator=(Transformator const &) = default;
+        Transformator& operator=(Transformator&&) = default;
+        ~Transformator() = default;
+
+        void Transform(List &&list)
+        {
+            std::string temp{};
+            std::size_t current{ 0 };
+            for(auto &&item : list)
+            {
+                temp.append(text.substr(current, item.first - 1));
+                temp.append("******");
+                blocks.push_back(
+                    std::make_pair(
+                        std::make_pair(item.first, item.first + 6),
+                        text.substr(item.first, item.second - item.first)));
+                current = item.second;
+            }
+            temp.append(text.substr(current, std::string::npos));
+        }
     };
 }
 
