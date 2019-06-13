@@ -84,6 +84,8 @@ namespace Parser
         }    
     };
 
+	inline std::string const Parser::whitespace{ " \t\n" };
+
     class Transformator
     {
     private:
@@ -97,21 +99,22 @@ namespace Parser
         Transformator& operator=(Transformator&&) = default;
         ~Transformator() = default;
 
-        void Transform(List &&list)
+        std::string Transform(List &&list)
         {
             std::string temp{};
             std::size_t current{ 0 };
             for(auto &&item : list)
             {
                 temp.append(text.substr(current, item.first - 1));
-                temp.append("******");
+                temp.append(" ******");
                 blocks.push_back(
                     std::make_pair(
-                        std::make_pair(item.first, item.first + 6),
-                        text.substr(item.first, item.second - item.first)));
-                current = item.second;
+                        std::make_pair(item.first, item.first + 5),
+                        text.substr(item.first + 2, item.second - (item.first - 1))));
+                current = item.second + 1;
             }
             temp.append(text.substr(current, std::string::npos));
+			return std::move(temp);
         }
     };
 }

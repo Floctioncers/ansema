@@ -392,8 +392,29 @@ namespace Window
 
         void makeText()
         {
-
+			text->events().text_changed([this]
+			{
+				auto fn = [this]() { transform(); };
+				pool.Append(std::move(fn));
+			});
         }
+
+		void transform()
+		{
+			std::size_t count{ text->text_line_count() };
+			std::string replace{};
+			for (std::size_t i = 0; i < count; ++i)
+			{
+				auto line{ text->getline(i) };
+				if (!line.has_value())
+					continue;
+				std::string const& l{ line.value() };
+				Parser::Parser p{ l };
+				Parser::Transformator t{ l };
+				std::string transformed{ t.Transform(p.GetTokens()) };
+				replace.append(std::move(transformed));
+			}
+		}
 
         void add()
         {
