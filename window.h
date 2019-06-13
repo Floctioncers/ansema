@@ -392,7 +392,7 @@ namespace Window
 
         void makeText()
         {
-			text->events().text_changed([this]
+			text->events().text_changed([this]()
 			{
 				auto fn = [this]() { transform(); };
 				pool.Append(std::move(fn));
@@ -414,6 +414,7 @@ namespace Window
 				std::string transformed{ t.Transform(p.GetTokens()) };
 				replace.append(std::move(transformed));
 			}
+			
 		}
 
         void add()
