@@ -129,7 +129,7 @@ namespace Window
         }
         void makeWindow()
         {
-            window->events().key_press.connect_unignorable([this](nana::arg_keyboard const& keyboard)
+            window->events().key_press([this](nana::arg_keyboard const& keyboard)
             {
                 KeyPress key{};
                 key.setKey(keyboard.key);
@@ -139,6 +139,7 @@ namespace Window
                     map[key]();
                 }
             });
+			nana::API::track_window_size(*window, nana::size{ 500, 310 }, false);
         }
 
     public:
