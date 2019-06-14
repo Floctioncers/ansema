@@ -112,9 +112,19 @@ namespace Window
         {
             layout->div(
                 "<weight=5>"
-                "<vert weight=250<weight=5><weight=25<open weight=33%><save weight=33%><saveAs weight=33%>><input weight=25><button weight=25><output vert arrange=[25, repeated]><weight=5>>"
+                "<vert weight=250"
+					"<weight=5>"
+					"<weight=25<open weight=33%><save weight=33%><saveAs weight=33%>>"
+					"<input weight=25>"
+					"<button weight=25>"
+					"<output vert arrange=[25, repeated]>"
+					"<weight=5>>"
                 "<weight=5>"
-                "<vert<weight=5><text><weight=5>>"
+                "<vert"
+					"<weight=5>"
+					"<weight=25<edit weight=80>>"
+					"<text>"
+					"<weight=5>>"
                 "<weight=5>");
         }
         void makeWindow()
