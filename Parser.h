@@ -116,6 +116,13 @@ namespace Parser
             temp.append(text.substr(current, std::string::npos));
 			return std::move(temp);
         }
+
+		std::vector<Block> Get()
+		{
+			std::vector<Block> temp{ std::move(blocks) };
+			blocks.clear();
+			return std::move(temp);
+		}
     };
 }
 

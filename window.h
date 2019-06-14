@@ -122,8 +122,9 @@ namespace Window
                 "<weight=5>"
                 "<vert"
 					"<weight=5>"
-					"<weight=25<edit weight=80>>"
-					"<text>"
+					"<weight=25<change weight=80>>"
+					"<edit>"
+					"<view>"
 					"<weight=5>>"
                 "<weight=5>");
         }
@@ -276,13 +277,163 @@ namespace Window
         ~PasswordGenerator() = default;
     };
 
+	class TextManager
+	{
+	private:
+		std::unique_ptr<textbox> edit;
+		std::unique_ptr<textbox> view;
+		std::unique_ptr<button> change;
+		std::vector<std::vector<Parser::Block>> blocks;
+		bool editting;
+		static std::string const editCaption;
+		static std::string const viewCaption;
+
+		void transform()
+		{
+			blocks.clear();
+			std::size_t count{ edit->text_line_count() };
+			std::string replace{};
+			for (std::size_t i = 0; i < count; ++i)
+			{
+				auto line{ edit->getline(i) };
+				if (!line.has_value())
+					continue;
+				std::string const& l{ line.value() };
+				Parser::Parser p{ l };
+				Parser::Transformator t{ l };
+				std::string transformed{ t.Transform(p.GetTokens()) };
+				replace.append(std::move(transformed));
+				blocks.push_back(t.Get());
+			}
+			view->reset(std::move(replace), true);
+		}
+
+		void makeEdit()
+		{
+
+		}
+
+		void makeView()
+		{
+			view->editable(false);
+			view->bgcolor(nana::colors::light_grey);
+			view->enable_caret();
+		}
+
+		void modeSwitch()
+		{
+			editting = !editting;
+			if (editting)
+			{
+				change->caption(viewCaption);
+				window.Layout().field_display("edit", true);
+				window.Layout().field_display("view", false);
+				window.Layout().collocate();
+			}
+			else
+			{
+				change->caption(editCaption);
+				window.Layout().field_display("edit", false);
+				window.Layout().field_display("view", true);
+				window.Layout().collocate();
+			}
+		}
+
+		void makeChange()
+		{
+			change->caption("Edit!");
+			change->events().click([this]()
+			{
+				auto fn = [this]() { modeSwitch();  };
+				pool.Append(std::move(fn));
+			});
+		}
+
+		void show()
+		{
+			edit->show();
+			view->show();
+		}
+
+		void hide()
+		{
+			edit->hide();
+			view->hide();
+		}
+
+		void add()
+		{
+			window.Layout()["edit"] << *edit;
+			window.Layout()["view"] << *view;
+			window.Layout()["change"] << *change;
+			window.Layout().field_display("edit", false);
+			auto fn = [this]() { hide(); };
+			auto gn = [this]() { show(); };
+			KeyPress hideShortCut{};
+			hideShortCut.setKey(KeyPress::Key::Escape);
+			hideShortCut.setShift(false);
+			KeyPress showShortCut{};
+			showShortCut.setKey(KeyPress::Key::Escape);
+			showShortCut.setShift(true);
+			window.Register(hideShortCut, std::move(fn));
+			window.Register(showShortCut, std::move(gn));
+		}
+
+		Window &window;
+		Pool &pool;
+	public:
+		TextManager(Window& window, Pool& pool) :
+			pool{ pool },
+			window{ window },
+			edit{ GenerateChild<textbox>(window.Form()) },
+			view{ GenerateChild<textbox>(window.Form()) },
+			change{ GenerateChild<button>(window.Form()) },
+			editting{ false }, blocks{}
+		{
+			makeEdit();
+			makeView();
+			makeChange();
+			add();
+		}
+
+		TextManager(TextManager const&) = delete;
+		TextManager(TextManager&&) = default;
+		TextManager& operator=(TextManager const&) = delete;
+		TextManager& operator=(TextManager&&) = default;
+		~TextManager() = default;
+
+		std::string Get()
+		{
+			std::string txt{};
+			std::size_t lines = edit->text_line_count();
+			for (std::size_t i = 0; i < lines; ++i)
+			{
+				auto temp = edit->getline(i);
+				if (temp.has_value())
+					txt.append(temp.value());
+				txt.push_back('\n');
+			}
+			return std::move(txt);
+		}
+
+		void Set(std::string &&txt)
+		{
+			edit->select(true);
+			edit->del();
+			edit->append(txt, false);
+		}
+	};
+
+	inline std::string const TextManager::editCaption{ "Edit!" };
+	inline std::string const TextManager::viewCaption{ "View!" };
+
     class FileManager
     {
     private:
         std::unique_ptr<button> saver;
         std::unique_ptr<button> saveAser;
         std::unique_ptr<button> opener;
-        std::unique_ptr<textbox> text;
+        std::unique_ptr<TextManager> text;
 
         std::optional<std::filesystem::path> path;
         std::optional<std::string> key;
@@ -327,9 +478,7 @@ namespace Window
             File f{ key.value() };
             f.Read(path.value());
             std::string txt{ f.Get() };
-            text->select(true);
-            text->del();
-            text->append(txt, false);
+			text->Set(std::move(txt));
         }
 
         void save()
@@ -360,15 +509,7 @@ namespace Window
         
         void saveAs(std::filesystem::path const &path, std::string const &key)
         {
-            std::string txt{};
-            std::size_t lines = text->text_line_count();
-            for (std::size_t i = 0; i < lines; ++i)
-            {
-                auto temp = text->getline(i);
-                if (temp.has_value())
-                    txt.append(temp.value());
-                txt.push_back('\n');
-            }
+			std::string txt{ text->Get() };
             File f{ key };
             f.Append(std::move(txt));
             f.Write(path);
@@ -403,57 +544,14 @@ namespace Window
 
         void makeText()
         {
-			text->events().text_changed([this]()
-			{
-				auto fn = [this]() { transform(); };
-				pool.Append(std::move(fn));
-			});
+			//TODO
         }
-
-		void transform()
-		{
-			std::size_t count{ text->text_line_count() };
-			std::string replace{};
-			for (std::size_t i = 0; i < count; ++i)
-			{
-				auto line{ text->getline(i) };
-				if (!line.has_value())
-					continue;
-				std::string const& l{ line.value() };
-				Parser::Parser p{ l };
-				Parser::Transformator t{ l };
-				std::string transformed{ t.Transform(p.GetTokens()) };
-				replace.append(std::move(transformed));
-			}
-			
-		}
 
         void add()
         {
-            window.Layout()["text"] << *text;
             window.Layout()["open"] << *opener;
             window.Layout()["save"] << *saver;
             window.Layout()["saveAs"] << *saveAser;
-            auto fn = [this]() { hide(); };
-            auto gn = [this]() { show(); };
-            KeyPress hideShortCut{};
-            hideShortCut.setKey(KeyPress::Key::Escape);
-            hideShortCut.setShift(false);
-            KeyPress showShortCut{};
-            showShortCut.setKey(KeyPress::Key::Escape);
-            showShortCut.setShift(true);
-            window.Register(hideShortCut, std::move(fn));
-            window.Register(showShortCut, std::move(gn));
-        }
-
-        void hide()
-        {
-            text->hide();
-        }
-
-        void show()
-        {
-            text->show();
         }
     public:
         FileManager(Window& window, Pool& pool) :
@@ -462,7 +560,7 @@ namespace Window
             saver{ GenerateChild<button>(window.Form()) },
             saveAser{ GenerateChild<button>(window.Form()) },
             opener{ GenerateChild<button>(window.Form()) },
-            text{ GenerateChild<textbox>(window.Form()) }
+            text{ std::make_unique<TextManager>(window, pool) }
         {
             makeSaver();
             makeSaveAser();
