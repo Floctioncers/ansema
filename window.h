@@ -15,6 +15,7 @@
 #include <nana/gui/widgets/button.hpp>
 #include <nana/gui/filebox.hpp>
 #include <nana/gui/msgbox.hpp>
+#include <nana/system/dataexch.hpp>
 
 namespace Window
 {
@@ -314,6 +315,20 @@ namespace Window
 			pool.Append(std::move(fn));
 		}
 
+        void copySecret()
+        {
+            auto pos = view->caret_pos();
+            for (auto const& item : blocks[pos.y])
+            {
+                if ((item.first.first <= pos.x) &&
+                    (item.first.second >= pos.x))
+                {
+                    nana::system::dataexch().set(item.second);
+                    break;
+                }
+            }
+        }
+
 		void makeEdit()
 		{
 
@@ -324,6 +339,11 @@ namespace Window
 			view->editable(false);
 			view->bgcolor(nana::colors::light_grey);
 			view->enable_caret();
+            view->events().dbl_click([this]()
+            {
+                auto fn = [this]() { copySecret(); };
+                pool.Append(std::move(fn));
+            });
 		}
 
 		void modeSwitch()

@@ -112,7 +112,7 @@ namespace Parser
                 blocks.push_back(
                     std::make_pair(
                         std::make_pair(item.first, item.first + masks.size() - 1),
-                        text.substr(item.first + 2, item.second - (item.first - 1))));
+                        text.substr(item.first + 2, item.second - (item.first + 3))));
                 current = item.second + 1;
             }
             temp.append(text.substr(current, std::string::npos));
