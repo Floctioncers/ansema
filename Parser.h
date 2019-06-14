@@ -91,6 +91,8 @@ namespace Parser
     private:
         std::vector<Block> blocks;
         std::string const& text;
+
+		static std::string const masks;
     public:
         Transformator(std::string const &text) : text{ text }, blocks{} {}
         Transformator(Transformator const&) = default;
@@ -105,11 +107,11 @@ namespace Parser
             std::size_t current{ 0 };
             for(auto &&item : list)
             {
-                temp.append(text.substr(current, item.first - 1));
-                temp.append(" ******");
+                temp.append(text.substr(current, item.first - current));
+                temp.append(masks);
                 blocks.push_back(
                     std::make_pair(
-                        std::make_pair(item.first, item.first + 5),
+                        std::make_pair(item.first, item.first + masks.size() - 1),
                         text.substr(item.first + 2, item.second - (item.first - 1))));
                 current = item.second + 1;
             }
@@ -124,6 +126,8 @@ namespace Parser
 			return std::move(temp);
 		}
     };
+
+	inline std::string const Transformator::masks{ "******" };
 }
 
 #endif

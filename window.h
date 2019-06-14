@@ -290,22 +290,28 @@ namespace Window
 
 		void transform()
 		{
-			blocks.clear();
-			std::size_t count{ edit->text_line_count() };
-			std::string replace{};
-			for (std::size_t i = 0; i < count; ++i)
+			auto fn = [this]()
 			{
-				auto line{ edit->getline(i) };
-				if (!line.has_value())
-					continue;
-				std::string const& l{ line.value() };
-				Parser::Parser p{ l };
-				Parser::Transformator t{ l };
-				std::string transformed{ t.Transform(p.GetTokens()) };
-				replace.append(std::move(transformed));
-				blocks.push_back(t.Get());
-			}
-			view->reset(std::move(replace), true);
+				blocks.clear();
+				std::size_t count{ edit->text_line_count() };
+				std::string replace{};
+				for (std::size_t i = 0; i < count; ++i)
+				{
+					auto line{ edit->getline(i) };
+					if (line.has_value())
+					{
+						std::string const& l{ line.value() };
+						Parser::Parser p{ l };
+						Parser::Transformator t{ l };
+						std::string transformed{ t.Transform(p.GetTokens()) };
+						replace.append(std::move(transformed));
+						blocks.push_back(t.Get());
+					}
+					replace.push_back('\n');
+				}
+				view->reset(std::move(replace), true);
+			};
+			pool.Append(std::move(fn));
 		}
 
 		void makeEdit()
@@ -332,6 +338,7 @@ namespace Window
 			}
 			else
 			{
+				transform();
 				change->caption(editCaption);
 				window.Layout().field_display("edit", false);
 				window.Layout().field_display("view", true);
@@ -421,6 +428,7 @@ namespace Window
 			edit->select(true);
 			edit->del();
 			edit->append(txt, false);
+			transform();
 		}
 	};
 
