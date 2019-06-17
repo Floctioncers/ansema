@@ -99,7 +99,7 @@ namespace Window
         {
             nana::API::emit_event(nana::event_code::key_press, view->parent(), keyboard);
         });
-        return std::move(ptr);
+        return ptr;
     }
 
     class Window
@@ -443,7 +443,7 @@ namespace Window
 					txt.append(temp.value());
 				txt.push_back('\n');
 			}
-			return std::move(txt);
+			return txt;
 		}
 
 		void Set(std::string &&txt)

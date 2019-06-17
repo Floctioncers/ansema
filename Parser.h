@@ -116,14 +116,14 @@ namespace Parser
                 current = item.second + 1;
             }
             temp.append(text.substr(current, std::string::npos));
-			return std::move(temp);
+			return temp;
         }
 
 		std::vector<Block> Get()
 		{
 			std::vector<Block> temp{ std::move(blocks) };
 			blocks.clear();
-			return std::move(temp);
+			return temp;
 		}
     };
 

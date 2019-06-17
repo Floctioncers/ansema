@@ -12,6 +12,7 @@ namespace CharsPassword
     std::unordered_map<char, std::string> const GenerateCharMap()
     {
         std::unordered_map<char, std::string> map{};
+
         map['n'] = "0123456789";
         map['a'] = "qwertyuiopasdfghjklzxcvbnm";
         map['A'] = "QWERTYUIOPASDFGHJKLZXCVBNM";
