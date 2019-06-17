@@ -105,10 +105,10 @@ namespace Window
     class Window
     {
     private:
+		static nana::size const windowSize;
         std::unique_ptr<form> window;
         std::unique_ptr<place> layout;
         std::unordered_map<KeyPress, std::function<void(void)>, KeyPressHash> map;
-		nana::size const windowSize;
 
         void makeLayout()
         {
@@ -147,8 +147,7 @@ namespace Window
 
     public:
         Window() :
-			windowSize{ 600, 310 },
-            window{ std::make_unique<form>(API::make_center(windowSize.height, windowSize.width)) },
+            window{ std::make_unique<form>(API::make_center(windowSize.width, windowSize.height)) },
             layout{ std::make_unique<place>(*window) },
             map{}
         {
@@ -185,6 +184,8 @@ namespace Window
             exec();
         }
     };
+
+	inline nana::size const Window::windowSize{ 600, 310 };
 
     class PasswordGenerator
     {
