@@ -108,6 +108,7 @@ namespace Window
         std::unique_ptr<form> window;
         std::unique_ptr<place> layout;
         std::unordered_map<KeyPress, std::function<void(void)>, KeyPressHash> map;
+		nana::size const windowSize;
 
         void makeLayout()
         {
@@ -141,12 +142,13 @@ namespace Window
                     map[key]();
                 }
             });
-			nana::API::track_window_size(*window, nana::size{ 500, 310 }, false);
+			nana::API::track_window_size(*window, windowSize, false);
         }
 
     public:
         Window() :
-            window{ std::make_unique<form>(API::make_center(500, 310)) },
+			windowSize{ 600, 310 },
+            window{ std::make_unique<form>(API::make_center(windowSize.height, windowSize.width)) },
             layout{ std::make_unique<place>(*window) },
             map{}
         {
