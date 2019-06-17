@@ -6,8 +6,8 @@
 namespace Welcome
 {
 	inline std::string const WelcomeText{
-		"ANSEMA ANother\n"
-		"    SEcret MAnager is a simple application written in C++ which should help you to protect your secrets and passwords.\n\n"
+		"ANSEMA\n"
+		"    ANother SEcret MAnager is a simple application written in C++ which should help you to protect your secrets and passwords.\n\n"
 		"HELP\n"
 		"    Program consist of two functions : Password generator\n"
 		"    and Secret editor.\n\n"
