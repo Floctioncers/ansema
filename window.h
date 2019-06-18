@@ -185,7 +185,7 @@ namespace Window
         }
     };
 
-	inline nana::size const Window::windowSize{ 600, 310 };
+	inline nana::size const Window::windowSize{ 800, 310 };
 
     class PasswordGenerator
     {
@@ -605,6 +605,12 @@ namespace Window
         FileManager& operator=(FileManager const&) = delete;
         FileManager& operator=(FileManager&&) = default;
         ~FileManager() = default;
+
+		void Set(std::string const &text)
+		{
+			std::string temp{ text };
+			this->text->Set(std::move(temp));
+		}
     };
 }
 #endif
