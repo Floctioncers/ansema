@@ -111,7 +111,7 @@ namespace Parser
                 temp.append(masks);
                 blocks.push_back(
                     std::make_pair(
-                        std::make_pair(item.first, item.first + masks.size() - 1),
+                        std::make_pair(temp.size() - masks.size(), temp.size() - 1),
                         text.substr(item.first + 2, item.second - (item.first + 3))));
                 current = item.second + 1;
             }
