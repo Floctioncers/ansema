@@ -21,7 +21,6 @@ if(NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
 elseif(NANA_CMAKE_STD_FILESYSTEM_FORCE)
     target_compile_definitions(nana PUBLIC STD_FILESYSTEM_FORCE)
-    target_link_libraries     (nana PUBLIC stdc++fs)
 
 elseif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_FORCE)
