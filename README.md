@@ -20,12 +20,12 @@ Program consists of two modules: Password generator and Secret editor.
 
 #### Password generator
 Simple password generator.Takes a formula that consists of :
-	*	n - generates a digit,
-    *   a - generates lower english alphabet char,
-    * 	A - same as a but uppercase,
-    * 	-. * _ - generate - . * _ respectivelly,
-    *	x - generates one of these ,.!? ; : chars,
-    *	X - generates one of these @#$%^&* chars.
+*	n - generates a digit,
+*   a - generates lower english alphabet char,
+* 	A - same as a but uppercase,
+* 	-. * _ - generate - . * _ respectivelly,
+*	x - generates one of these ,.!? ; : chars,
+*	X - generates one of these @#$%^&* chars.
 	
 You can generate them with button Generate!, double click on generated input
 will copy it in your clipboard.
