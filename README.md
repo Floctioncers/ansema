@@ -19,7 +19,7 @@ compiler - tested with MingW and Microsoft C++ compiler.
 Program consists of two modules: Password generator and Secret editor.
 
 #### Password generator
-Simple password generator.Takes a formula that consists of:
+Simple password generator. Takes a formula that consists of:
 * n - generates a digit,
 * a - generates lower english alphabet char,
 * A - same as a but uppercase,
