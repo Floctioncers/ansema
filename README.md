@@ -14,23 +14,29 @@ Cryptopp projects.
 You'll need CMake version 3.14 (older version may function as well) and C++17
 compiler - tested with MingW and Microsoft C++ compiler.
 
-### Building
+### Application Manual
 
-A step by step series of examples that tell you how to get a development env running
+Program consists of two modules: Password generator and Secret editor.
 
-Say what the step will be
+#### Password generator
+Simple password generator.Takes a formula that consists of :
+	*	n - generates a digit,
+    *   a - generates lower english alphabet char,
+    * 	A - same as a but uppercase,
+    * 	-. * _ - generate - . * _ respectivelly,
+    *	x - generates one of these ,.!? ; : chars,
+    *	X - generates one of these @#$%^&* chars.
+	
+You can generate them with button Generate!, double click on generated input
+will copy it in your clipboard.
 
-```
-Give the example
-```
+#### Secret editor
+Simple text editor with a little enhancement, when you put  anything between
+[ and ], it will be only visible in edit mode.In view mode you can double click
+on the generated [ secret ] and the hidden word will be copied in your
+clipboard. Intented usage is to put username and password between bracket and
+when needed just to savely copy them without worrying that someone is looking.
 
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
 
 ## Running the tests
 
