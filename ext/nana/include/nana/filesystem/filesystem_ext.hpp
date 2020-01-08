@@ -41,7 +41,7 @@ inline std::string generic_u8string(const std::filesystem::path& p)
 #if NANA_USING_BOOST_FILESYSTEM
 	return nana::to_utf8(p.generic_wstring());
 #else
-	return p.generic_u8string();
+	return p.generic_string();
 #endif
 }
 

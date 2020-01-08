@@ -12,7 +12,10 @@
  *		James Bremner
  */
 
-#include <nana/gui.hpp>
+#include <nana/gui/compact.hpp>
+#include <nana/gui/msgbox.hpp>
+#include <nana/gui/drawing.hpp>
+#include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/button.hpp>
 #include <nana/gui/widgets/spinbox.hpp>
@@ -1244,7 +1247,7 @@ namespace nana
 			auto files = impl->fbox.show();
 			if(!files.empty())
 			{
-				impl->value = files.front().u8string();
+				impl->value = files.front().string();
 				impl->path_edit.caption(impl->value);
 			}
 		});

@@ -19,10 +19,10 @@ namespace Parser
 
         bool IsWhitespace(char const c)
         {
-            for(auto const item : whitespace)
+            for (auto const item : whitespace)
             {
                 if (c == item)
-                return true;
+                    return true;
             }
             return false;
         }
@@ -31,12 +31,12 @@ namespace Parser
         {
             return (text[current] == c) &&
                 (((current + 1) == text.size()) || (IsWhitespace(text[current + 1])));
-        } 
+        }
 
         std::size_t FindNextToken(char const c)
         {
             current = text.find_first_not_of(whitespace, current);
-            while(current != std::string::npos)
+            while (current != std::string::npos)
             {
                 if (IsValid(c))
                 {
@@ -50,7 +50,7 @@ namespace Parser
 
         void FindTokens()
         {
-            while(current != std::string::npos)
+            while (current != std::string::npos)
             {
                 auto start = FindNextToken('[');
                 auto end = FindNextToken(']');
@@ -60,13 +60,13 @@ namespace Parser
 
     public:
 
-        Parser(std::string const &text) : text{ text }, current{ 0 }, list{} {}
+        Parser(std::string const& text) : text{ text }, current{ 0 }, list{} {}
         Parser(Parser const&) = default;
         Parser(Parser&&) = default;
-        Parser& operator=(Parser const &) = default;
+        Parser& operator=(Parser const&) = default;
         Parser& operator=(Parser&&) = default;
         ~Parser() = default;
-         
+
         List GetTokens()
         {
             FindTokens();
@@ -81,10 +81,10 @@ namespace Parser
             list.clear();
             current = 0;
             return out;
-        }    
+        }
     };
 
-	inline std::string const Parser::whitespace{ " \t\n" };
+    std::string const Parser::whitespace{ " \t\n" };
 
     class Transformator
     {
@@ -92,20 +92,20 @@ namespace Parser
         std::vector<Block> blocks;
         std::string const& text;
 
-		static std::string const masks;
+        static std::string const masks;
     public:
-        Transformator(std::string const &text) : text{ text }, blocks{} {}
+        Transformator(std::string const& text) : text{ text }, blocks{} {}
         Transformator(Transformator const&) = default;
         Transformator(Transformator&&) = default;
-        Transformator& operator=(Transformator const &) = default;
+        Transformator& operator=(Transformator const&) = default;
         Transformator& operator=(Transformator&&) = default;
         ~Transformator() = default;
 
-        std::string Transform(List &&list)
+        std::string Transform(List&& list)
         {
             std::string temp{};
             std::size_t current{ 0 };
-            for(auto &&item : list)
+            for (auto&& item : list)
             {
                 temp.append(text.substr(current, item.first - current));
                 temp.append(masks);
@@ -116,18 +116,18 @@ namespace Parser
                 current = item.second + 1;
             }
             temp.append(text.substr(current, std::string::npos));
-			return temp;
+            return temp;
         }
 
-		std::vector<Block> Get()
-		{
-			std::vector<Block> temp{ std::move(blocks) };
-			blocks.clear();
-			return temp;
-		}
+        std::vector<Block> Get()
+        {
+            std::vector<Block> temp{ std::move(blocks) };
+            blocks.clear();
+            return temp;
+        }
     };
 
-	inline std::string const Transformator::masks{ "******" };
+    inline std::string const Transformator::masks{ "******" };
 }
 
 #endif

@@ -25,6 +25,12 @@
 #include "config_cpu.h"
 #include "config_ver.h"
 
+// You may need to force include a C++ header on Android when using STLPort
+// to ensure _STLPORT_VERSION is defined
+#if (defined(_MSC_VER) && _MSC_VER <= 1300) || defined(__MWERKS__) || (defined(_STLPORT_VERSION) && ((_STLPORT_VERSION < 0x450) || defined(_STLP_NO_UNCAUGHT_EXCEPT_SUPPORT)))
+#define CRYPTOPP_DISABLE_UNCAUGHT_EXCEPTION
+#endif
+
 // Ancient Crypto++ define, dating back to C++98 and C++03.
 #ifndef CRYPTOPP_DISABLE_UNCAUGHT_EXCEPTION
 # define CRYPTOPP_UNCAUGHT_EXCEPTION_AVAILABLE 1
@@ -34,6 +40,20 @@
 #ifndef __has_feature
 # define __has_feature(x) 0
 #endif
+
+// Define CRYPTOPP_NO_CXX11 to avoid C++11 related features shown at the
+// end of this file. Some compilers and standard C++ headers advertise C++11
+// but they are really just C++03 with some additional C++11 headers and
+// non-conforming classes. You might also consider `-std=c++03` or
+// `-std=gnu++03`, but they are required options when building the library
+// and all programs. CRYPTOPP_NO_CXX11 is probably easier to manage but it may
+// cause -Wterminate warnings under GCC. MSVC++ has a similar warning.
+// Also see https://github.com/weidai11/cryptopp/issues/529
+// #define CRYPTOPP_NO_CXX11 1
+
+// Define CRYPTOPP_NO_CXX17 to avoid C++17 related features shown at the end of
+// this file. At the moment it should only affect std::uncaught_exceptions.
+// #define CRYPTOPP_NO_CXX17 1
 
 // C++11 macro version, https://stackoverflow.com/q/7223991/608639
 #if !defined(CRYPTOPP_NO_CXX11)
@@ -54,8 +74,15 @@
 #  endif
 #endif
 
+// C++14 macro version, https://stackoverflow.com/q/26089319/608639
+#if defined(CRYPTOPP_CXX11) && !defined(CRYPTOPP_NO_CXX14)
+#  if ((_MSC_VER >= 1900) || (__cplusplus >= 201402L)) && !defined(_STLPORT_VERSION)
+#    define CRYPTOPP_CXX14 1
+#  endif
+#endif
+
 // C++17 macro version, https://stackoverflow.com/q/38456127/608639
-#if defined(CRYPTOPP_CXX11) && !defined(CRYPTOPP_NO_CXX17)
+#if defined(CRYPTOPP_CXX14) && !defined(CRYPTOPP_NO_CXX17)
 #  if ((_MSC_VER >= 1900) || (__cplusplus >= 201703L)) && !defined(_STLPORT_VERSION)
 #    define CRYPTOPP_CXX17 1
 #  endif
@@ -91,11 +118,19 @@
 // MS at VS2015 with Vista (19.00); GCC at 4.3; LLVM Clang at 2.9; Apple Clang at 4.0; Intel 11.1; SunCC 5.13.
 // Microsoft's implementation only works for Vista and above, so its further
 // limited. http://connect.microsoft.com/VisualStudio/feedback/details/1789709
-#if (CRYPTOPP_MSC_VERSION >= 1900) && ((WINVER >= 0x0600) || (_WIN32_WINNT >= 0x0600)) || \
+#if (__cpp_threadsafe_static_init >= 200806) || \
+	(CRYPTOPP_MSC_VERSION >= 1900) && ((WINVER >= 0x0600) || (_WIN32_WINNT >= 0x0600)) || \
 	(CRYPTOPP_LLVM_CLANG_VERSION >= 20900) || (CRYPTOPP_APPLE_CLANG_VERSION >= 40000)  || \
 	(__INTEL_COMPILER >= 1110) || (CRYPTOPP_GCC_VERSION >= 40300) || (__SUNPRO_CC >= 0x5130)
 # define CRYPTOPP_CXX11_DYNAMIC_INIT 1
 #endif // Dynamic Initialization compilers
+
+// deleted functions: MS at VS2013 (18.00); GCC at 4.3; Clang at 2.9; Intel 12.1; SunCC 5.13.
+#if (CRYPTOPP_MSC_VERSION >= 1800) || (CRYPTOPP_LLVM_CLANG_VERSION >= 20900) || \
+	(CRYPTOPP_APPLE_CLANG_VERSION >= 40000) || (__INTEL_COMPILER >= 1210) || \
+	(CRYPTOPP_GCC_VERSION >= 40300) || (__SUNPRO_CC >= 0x5130)
+# define CRYPTOPP_CXX11_DELETED_FUNCTIONS 1
+#endif // deleted functions
 
 // alignof/alignas: MS at VS2015 (19.00); GCC at 4.8; Clang at 3.0; Intel 15.0; SunCC 5.13.
 #if (CRYPTOPP_MSC_VERSION >= 1900) || __has_feature(cxx_alignas) || \
@@ -122,15 +157,17 @@
 #endif // noexcept compilers
 
 // variadic templates: MS at VS2013 (18.00); GCC at 4.3; Clang at 2.9; Intel 12.1; SunCC 5.13.
-#if (CRYPTOPP_MSC_VERSION >= 1800) || __has_feature(cxx_variadic_templates) || \
-	(__INTEL_COMPILER >= 1210) || (CRYPTOPP_GCC_VERSION >= 40300) || (__SUNPRO_CC >= 0x5130)
+#if (__cpp_variadic_templates >= 200704) || __has_feature(cxx_variadic_templates) || \
+	(CRYPTOPP_MSC_VERSION >= 1800) || (__INTEL_COMPILER >= 1210) || \
+	(CRYPTOPP_GCC_VERSION >= 40300) || (__SUNPRO_CC >= 0x5130)
 # define CRYPTOPP_CXX11_VARIADIC_TEMPLATES 1
 #endif // variadic templates
 
 // constexpr: MS at VS2015 (19.00); GCC at 4.6; Clang at 3.1; Intel 16.0; SunCC 5.13.
 // Intel has mis-supported the feature since at least ICPC 13.00
-#if (CRYPTOPP_MSC_VERSION >= 1900) || __has_feature(cxx_constexpr) || \
-	(__INTEL_COMPILER >= 1600) || (CRYPTOPP_GCC_VERSION >= 40600) || (__SUNPRO_CC >= 0x5130)
+#if (__cpp_constexpr >= 200704) || __has_feature(cxx_constexpr) || \
+	(CRYPTOPP_MSC_VERSION >= 1900) || (__INTEL_COMPILER >= 1600) || \
+	(CRYPTOPP_GCC_VERSION >= 40600) || (__SUNPRO_CC >= 0x5130)
 # define CRYPTOPP_CXX11_CONSTEXPR 1
 #endif // constexpr compilers
 
@@ -149,6 +186,18 @@
 #endif // nullptr_t compilers
 
 #endif // CRYPTOPP_CXX11
+
+// ***************** C++14 and above ********************
+
+#if defined(CRYPTOPP_CXX14)
+
+// Extended static_assert with one argument
+// Microsoft cannot handle the single argument static_assert as of VS2019 (cl.exe 19.00)
+#if (__cpp_static_assert >= 201411)
+# define CRYPTOPP_CXX14_STATIC_ASSERT 1
+#endif // static_assert
+
+#endif
 
 // ***************** C++17 and above ********************
 

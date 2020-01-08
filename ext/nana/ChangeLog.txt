@@ -3,6 +3,10 @@
 The details of release
 http://nanapro.org/release_note.htm
 
+Version 1.7.2
+July 19, 2019
+===============
+
 Version 1.7.1
 April 22, 2019
 ===============

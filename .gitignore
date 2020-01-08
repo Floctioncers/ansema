@@ -1,7 +1,9 @@
-﻿/mingw
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
 /.vs
-/msvc
-.vscode/ipch/49008da47d2a6a25/MAIN.ipch
-.vscode/ipch/49008da47d2a6a25/mmap_address.bin
-.vscode/settings.json
-.vscode/ipch/b1efb2496e76a7b2/mmap_address.bin
+/ext/cryptopp/.vs/cryptest/v16
+/ext/nana/build/bin
+/ext/nana/out/build/x64-Debug
+/ext/nana/build/vc2019/.vs

@@ -26,6 +26,9 @@
     <ClCompile Include="algparam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="allocate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="arc4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -515,6 +518,9 @@
     <ClCompile Include="xtrcrypt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="xts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="zdeflate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -556,6 +562,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="algparam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="allocate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="arc4.h">
@@ -936,6 +945,9 @@
     <ClInclude Include="secblock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="secblockfwd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="seckey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1044,6 +1056,9 @@
     <ClInclude Include="xtrcrypt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="xts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="zdeflate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1062,6 +1077,9 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="rdrand.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="rdseed.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
     <CustomBuild Include="x64dll.asm">

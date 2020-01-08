@@ -5,11 +5,17 @@ SHELL = /bin/sh
 
 # If needed
 TMPDIR ?= /tmp
-# Used for ARMv7 and NEON.
+# Used for ARMv7a and NEON. Android hard codes softfp
 FP_ABI ?= hard
 # Used for feature tests
 TOUT ?= a.out
 TOUT := $(strip $(TOUT))
+
+# Allow override for the cryptest.exe recipe. Change to
+# ./libcryptopp.so or ./libcryptopp.dylib to suit your
+# taste. https://github.com/weidai11/cryptopp/issues/866
+LINK_LIBRARY ?= ./libcryptopp.a
+LINK_LIBRARY_PATH ?= ./
 
 # Default CXXFLAGS if none were provided
 CXXFLAGS ?= -DNDEBUG -g2 -O3 -fPIC -pipe
@@ -30,7 +36,6 @@ LDCONF ?= /sbin/ldconfig -n
 IS_IOS ?= 0
 IS_ANDROID ?= 0
 IS_ARM_EMBEDDED ?= 0
-IS_NEON ?= 0
 
 # Yet another Clang hack. I think the LLVM devs are making the shit up
 # as they go. Also see https://github.com/weidai11/cryptopp/issues/831.
@@ -115,17 +120,9 @@ endif
 #   See http://www.cryptopp.com/wiki/Android_(Command_Line).
 ifeq ($(IS_ANDROID),1)
   # CPP, CXX, AR, RANLIB, LD, etc are set in 'setenv-android.sh'
-  CXXFLAGS += $(AOSP_FLAGS) -DANDROID --sysroot=$(AOSP_SYSROOT)
-  CXXFLAGS += -Wa,--noexecstack -I$(AOSP_STL_INC) -I$(AOSP_SYS_ARCH_INC)
-  LDFLAGS += --sysroot=$(AOSP_LD_SYSROOT)
-
-  # c++config.h shows up in odd places at times.
-  ifneq ($(AOSP_BITS_INC),)
-    CXXFLAGS += -I$(AOSP_BITS_INC)
-  endif
-
-  # STL headers
-  LDLIBS += $(AOSP_STL_LIB)
+  CXXFLAGS += $(AOSP_FLAGS) -stdlib=$(AOSP_RUNTIME) -DANDROID
+  CXXFLAGS += -D__ANDROID_API__=$(AOSP_API) --sysroot=$(AOSP_SYSROOT)
+  CXXFLAGS += -Wa,--noexecstack
 
   # Source files copied into PWD for Android cpu-features
   # setenv-android.sh does the copying. Its a dirty compile.
@@ -174,6 +171,14 @@ else
   IS_ARMV8 := $(shell echo $(HOSTX) | $(GREP) -i -c -E 'aarch32|aarch64|arm64|armv8')
 endif
 
+ifeq ($(IS_ARMV8),1)
+  IS_ARM32 = 0
+endif
+
+IS_X32 := 0
+IS_PPC32 := 0
+IS_PPC64 := 0
+
 $(info Here's what we found... IS_X86: $(IS_X86), IS_X64: $(IS_X64), IS_ARM32: $(IS_ARM32), IS_ARMV8: $(IS_ARMV8))
 
 ###########################################################
@@ -192,9 +197,10 @@ else ifeq ($(findstring distclean,$(MAKECMDGOALS)),trim)
   DETECT_FEATURES := 0
 endif
 
-# Strip out -Wall, -Wextra and friends for feature testing
+# Strip out -Wall, -Wextra and friends for feature testing. FORTIFY_SOURCE is removed
+# because it requires -O1 or higher, but we use -O0 to tame the optimizer.
 ifeq ($(DETECT_FEATURES),1)
-  TCXXFLAGS := $(filter-out -Wall -Wextra -Werror% -Wunused -Wconversion -Wp%, $(CXXFLAGS))
+  TCXXFLAGS := $(filter-out -D_FORTIFY_SOURCE=% -Wall -Wextra -Werror% -Wunused -Wconversion -Wp%, $(CXXFLAGS))
   ifneq ($(strip $(TCXXFLAGS)),)
     $(info Using testing flags: $(TCXXFLAGS))
   endif
@@ -353,6 +359,18 @@ ifeq ($(DETECT_FEATURES),1)
     endif
   endif
 
+  # Most Clang cannot handle mixed asm with positional arguments, where the
+  # body is Intel style with no prefix and the templates are AT&T style.
+  # Also see https://bugs.llvm.org/show_bug.cgi?id=39895 .
+
+  # CRYPTOPP_DISABLE_MIXED_ASM is now being added in config_asm.h for all
+  # Clang compilers. This test will need to be re-enabled if Clang fixes it.
+  #TPROG = TestPrograms/test_asm_mixed.cxx
+  #HAVE_OPT = $(shell $(CXX) $(TCXXFLAGS) $(ZOPT) $(TPROG) -o $(TOUT) 2>&1 | tr ' ' '\n' | wc -l)
+  #ifneq ($(strip $(HAVE_OPT)),0)
+  #  CXXFLAGS += -DCRYPTOPP_DISABLE_MIXED_ASM
+  #endif
+
 # DETECT_FEATURES
 endif
 
@@ -360,16 +378,15 @@ endif
 endif
 
 ###########################################################
-#####            ARM A-32, Aach64 and NEON            #####
+#####                ARM A-32 and NEON                #####
 ###########################################################
 
-ifneq ($(IS_ARM32)$(IS_ARMV8),00)
+ifneq ($(IS_ARM32),0)
 ifeq ($(DETECT_FEATURES),1)
 
-ifeq ($(IS_ARM32),1)
-
-  ifneq ($(IS_IOS)$(IS_ANDROID),00)
-    NEON_FLAG =
+  # Android needs -c compile flag for NEON. Otherwise there's an odd linker message.
+  ifeq ($(IS_ANDROID),1)
+    NEON_FLAG = -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -mfpu=neon
   else
     NEON_FLAG = -march=armv7-a -mfloat-abi=$(FP_ABI) -mfpu=neon
   endif
@@ -399,10 +416,17 @@ ifeq ($(IS_ARM32),1)
     CXXFLAGS += -DCRYPTOPP_DISABLE_ASM
   endif
 
+# DETECT_FEATURES
+endif
 # IS_ARM32
 endif
 
-ifeq ($(IS_ARMV8),1)
+###########################################################
+#####                Aach32 and Aarch64               #####
+###########################################################
+
+ifneq ($(IS_ARMV8),0)
+ifeq ($(DETECT_FEATURES),1)
 
   ifeq ($(IS_IOS),1)
     ASIMD_FLAG =
@@ -422,9 +446,9 @@ ifeq ($(IS_ARMV8),1)
   TOPT = $(ASIMD_FLAG)
   HAVE_OPT = $(shell $(CXX) $(TCXXFLAGS) $(ZOPT) $(TOPT) $(TPROG) -o $(TOUT) 2>&1 | tr ' ' '\n' | wc -l)
   ifeq ($(strip $(HAVE_OPT)),0)
-    ACLE_FLAG += -DCRYPTOPP_ARM_ACLE_AVAILABLE=1
+    ACLE_FLAG += -DCRYPTOPP_ARM_ACLE_HEADER=1
   else
-    CXXFLAGS += -DCRYPTOPP_ARM_ACLE_AVAILABLE=0
+    CXXFLAGS += -DCRYPTOPP_ARM_ACLE_HEADER=0
   endif
 
   TPROG = TestPrograms/test_arm_asimd.cxx
@@ -497,13 +521,9 @@ ifeq ($(IS_ARMV8),1)
       SHA512_FLAG = -march=armv8.4-a+crypto
     endif
 
-# IS_ARMV8
-endif
-
 # DETECT_FEATURES
 endif
-
-# IS_ARM32, IS_ARMV8, IS_NEON
+# IS_ARMV8
 endif
 
 ###########################################################
@@ -556,9 +576,9 @@ ifneq ($(filter valgrind,$(MAKECMDGOALS)),)
   CXXFLAGS := $(CXXFLAGS:-g%=-g3)
   CXXFLAGS := $(CXXFLAGS:-O%=-O1)
   CXXFLAGS := $(CXXFLAGS:-xO%=-xO1)
-  ifeq ($(findstring -DCRYPTOPP_VALGRIND,$(CXXFLAGS)),)
-    CXXFLAGS += -DCRYPTOPP_VALGRIND
-  endif # -DCRYPTOPP_VALGRIND
+  ifeq ($(findstring -DCRYPTOPP_COVERAGE,$(CXXFLAGS)),)
+    CXXFLAGS += -DCRYPTOPP_COVERAGE
+  endif # -DCRYPTOPP_COVERAGE
 endif # Valgrind
 
 # Debug testing on GNU systems. Triggered by -DDEBUG.
@@ -598,7 +618,7 @@ endif # Dead code stripping
 ###########################################################
 
 # List cryptlib.cpp first, then cpu.cpp, then integer.cpp to tame C++ static initialization problems.
-SRCS := cryptlib.cpp cpu.cpp integer.cpp $(filter-out cryptlib.cpp cpu.cpp integer.cpp pch.cpp simple.cpp cryptlib_bds.cpp,$(sort $(wildcard *.cpp)))
+SRCS := cryptlib.cpp cpu.cpp integer.cpp $(filter-out cryptlib.cpp cpu.cpp integer.cpp pch.cpp simple.cpp,$(sort $(wildcard *.cpp)))
 # For Makefile.am; resource.h is Windows
 INCL := $(filter-out resource.h,$(sort $(wildcard *.h)))
 
@@ -614,6 +634,18 @@ ifeq ($(IS_ARM32)$(IS_LINUX),11)
     CRYPTOGAMS_ARMV7_THUMB_FLAG = -march=armv7-a -Wa,--noexecstack
   endif
   SRCS += aes_armv4.S sha1_armv4.S sha256_armv4.S sha512_armv4.S
+endif
+
+# Remove unneeded arch specific files to speed build time.
+ifeq ($(IS_PPC32)$(IS_PPC64),00)
+  SRCS := $(filter-out ppc_%,$(SRCS))
+endif
+ifeq ($(IS_ARM32)$(IS_ARMV8),00)
+  SRCS := $(filter-out arm_%,$(SRCS))
+  SRCS := $(filter-out neon_%,$(SRCS))
+endif
+ifeq ($(IS_X86)$(IS_X32)$(IS_X64),000)
+  SRCS := $(filter-out sse_%,$(SRCS))
 endif
 
 # List cryptlib.cpp first, then cpu.cpp, then integer.cpp to tame C++ static initialization problems.
@@ -700,8 +732,13 @@ cmake-clean:
 	@-$(RM) -f cryptopp-config.cmake CMakeLists.txt
 	@-$(RM) -rf cmake_build/
 
+.PHONY: android-clean
+android-clean:
+	@-$(RM) -f $(patsubst %_simd.cpp,%_simd.cpp.neon,$(wildcard *_simd.cpp))
+	@-$(RM) -rf obj/
+
 .PHONY: distclean
-distclean: clean autotools-clean cmake-clean
+distclean: clean autotools-clean cmake-clean android-clean
 	-$(RM) adhoc.cpp adhoc.cpp.copied GNUmakefile.deps benchmarks.html cryptest.txt
 	@-$(RM) cryptest-*.txt cryptopp.tgz libcryptopp.pc *.o *.bc *.ii *~
 	@-$(RM) -r cryptlib.lib cryptest.exe *.suo *.sdf *.pdb Win32/ x64/ ipch/
@@ -786,8 +823,8 @@ endif
 libcryptopp.dylib: $(LIBOBJS) $(AOSP_CPU_OBJ)
 	$(CXX) -dynamiclib -o $@ $(strip $(CXXFLAGS)) -install_name "$@" -current_version "$(LIB_MAJOR).$(LIB_MINOR).$(LIB_PATCH)" -compatibility_version "$(LIB_MAJOR).$(LIB_MINOR)" -headerpad_max_install_names $(LDFLAGS) $(LIBOBJS) $(AOSP_CPU_OBJ)
 
-cryptest.exe: libcryptopp.a $(TESTOBJS)
-	$(CXX) -o $@ $(strip $(CXXFLAGS)) $(TESTOBJS) ./libcryptopp.a $(LDFLAGS) $(LDLIBS)
+cryptest.exe: $(LINK_LIBRARY) $(TESTOBJS)
+	$(CXX) -o $@ $(strip $(CXXFLAGS)) $(TESTOBJS) $(LINK_LIBRARY_PATH)$(LINK_LIBRARY) $(LDFLAGS) $(LDLIBS)
 
 # Used to generate list of source files for Autotools, CMakeList and Android.mk
 .PHONY: sources
@@ -821,7 +858,7 @@ aes_armv4.o : aes_armv4.S
 	$(CXX) $(strip $(CXXFLAGS) $(CRYPTOGAMS_ARMV7_THUMB_FLAG) -c) $<
 
 cpu-features.o: cpu-features.h cpu-features.c
-	$(CXX) $(strip $(CXXFLAGS) -fpermissive -c) cpu-features.c
+	$(CXX) -x c $(strip $(CXXFLAGS) -c) cpu-features.c
 
 # SSSE3 or NEON available
 aria_simd.o : aria_simd.cpp
@@ -933,3 +970,4 @@ sm4_simd.o : sm4_simd.cpp
 .PHONY: dep deps depend
 dep deps depend GNUmakefile.deps:
 	$(CXX) $(strip $(CXXFLAGS) -DCRYPTOPP_DISABLE_ASM) -MM *.cpp > GNUmakefile.deps
+
