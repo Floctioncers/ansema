@@ -14,4 +14,5 @@ int main()
 	manager.Set(Welcome::WelcomeText);
     pool.Start();
     w.Exec();
+    pool.Join();
 }

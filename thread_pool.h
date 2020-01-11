@@ -176,15 +176,7 @@ namespace ThreadPool
         ThreadPool& operator=(ThreadPool&&) = delete;
         ~ThreadPool()
         {			
-            for (std::size_t i = 0; i < threads.size(); ++i)
-            {
-                run.store(false);
-				cnd.notify_all();
-                if (threads[i].joinable())
-                {
-                    threads[i].join();
-                }
-            }
+            Join();
         }
 
         void Stop()
@@ -217,6 +209,25 @@ namespace ThreadPool
         {
             commands.Append(fn);
 			cnd.notify_all();
+        }
+
+        void Join() {
+            while (!commands.Empty()) {
+                std::this_thread::yield()
+            }
+            Stop();
+            bool joinableAll = false;
+            while (!joinableAll) {
+                for (std::size_t i = 0; i < threads.size(); ++i)
+                {
+                    run.store(false);
+                    cnd.notify_all();
+                    if (threads[i].joinable())
+                    {
+                        threads[i].join();
+                    }
+                }
+            }
         }
     };
 
