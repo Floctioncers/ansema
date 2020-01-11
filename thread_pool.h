@@ -213,19 +213,16 @@ namespace ThreadPool
 
         void Join() {
             while (!commands.Empty()) {
-                std::this_thread::yield()
+                std::this_thread::yield();
             }
             Stop();
-            bool joinableAll = false;
-            while (!joinableAll) {
-                for (std::size_t i = 0; i < threads.size(); ++i)
+            for (std::size_t i = 0; i < threads.size(); ++i)
+            {
+                run.store(false);
+                cnd.notify_all();
+                if (threads[i].joinable())
                 {
-                    run.store(false);
-                    cnd.notify_all();
-                    if (threads[i].joinable())
-                    {
-                        threads[i].join();
-                    }
+                    threads[i].join();
                 }
             }
         }
@@ -291,7 +288,12 @@ namespace ThreadPool
     {
     private:
         std::vector<T> msg;
-        
+
+        std::filesystem::path tempFile(std::filesystem::path const& path) {
+            auto out = path;
+            out.replace_filename(path.filename().replace_extension(".tmp"));
+            return out;
+        }        
     public:
         WriteMessage(std::vector<T> &&message, std::filesystem::path &&path) : Message<T>{ std::move(path) }, msg{ std::move(message) } {}
         WriteMessage(WriteMessage const&) = delete;
@@ -302,10 +304,12 @@ namespace ThreadPool
 
         void operator()() override
         {
-            std::ofstream stream{ this->path, std::fstream::out | std::fstream::binary };
+            auto tmp = tempFile(this->path);
+            std::ofstream stream{ tmp, std::fstream::out | std::fstream::binary };
             stream.write(reinterpret_cast<char const *>(msg.data()), msg.size() * sizeof(T));
 			stream.flush();
 			stream.close();
+            std::filesystem::rename(tmp, this->path);
         }
     };
 
@@ -369,6 +373,7 @@ namespace ThreadPool
     {
     private:
         static ThreadPool<MessageHandler<T>> pool;
+
     public:
         ThreadStream() { if (!pool.IsRunning()) { pool.Start(); } };
         ThreadStream(ThreadStream const&) = delete;
