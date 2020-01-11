@@ -137,7 +137,7 @@ namespace AesTransformator
             auto temp{ transformator.Encrypt(data) };
 
             std::vector<unsigned char> out{};
-            out.reserve(temp.size());
+            out.reserve(temp.size() + salt.size());
 			for (auto const& item : salt)
 			{
 				out.push_back(item);
@@ -178,7 +178,8 @@ namespace AesTransformator
 			}
 
 			transformator.SetKey(salt, key);
-            try {
+            try 
+            {
                 data = transformator.Decrypt(encrypted);
             }
             catch (CryptoPP::InvalidCiphertext &ex)
