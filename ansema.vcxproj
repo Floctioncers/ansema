@@ -85,7 +85,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>C:\Users\Amir\source\repos\Floctioncers\ansema\ext\nana\build\bin;C:\Users\Amir\source\repos\Floctioncers\ansema\ext\cryptopp\x64\Output\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>.\ext\nana\build\bin;.\ext\cryptopp\x64\Output\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
