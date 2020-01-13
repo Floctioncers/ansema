@@ -10,6 +10,7 @@
 #include <functional>
 #include <vector>
 #include <unordered_map>
+#include <codecvt>
 #include <nana/gui.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/button.hpp>
@@ -298,35 +299,37 @@ namespace Window
 			{
 				blocks.clear();
 				std::size_t count{ edit->text_line_count() };
-				std::string replace{};
+				std::u32string replace{};
+                auto converter = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>{};
 				for (std::size_t i = 0; i < count; ++i)
 				{
 					auto line{ edit->getline(i) };
 					if (line.has_value())
 					{
-						std::string const& l{ line.value() };
+						std::u32string const& l{ converter.from_bytes(line.value()) };
 						Parser::Parser p{ l };
 						Parser::Transformator t{ l };
-						std::string transformed{ t.Transform(p.GetTokens()) };
+						std::u32string transformed{ t.Transform(p.GetTokens()) };
 						replace.append(std::move(transformed));
 						blocks.push_back(t.Get());
 					}
 					replace.push_back('\n');
 				}
-				view->reset(std::move(replace), true);
+				view->reset(converter.to_bytes(std::move(replace)), true);
 			};
 			pool.Append(std::move(fn));
 		}
 
         void copySecret()
         {
+            auto converter = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>{};
             auto pos = view->caret_pos();
             for (auto const& item : blocks[pos.y])
             {
                 if ((item.first.first <= pos.x) &&
                     (item.first.second >= pos.x))
                 {
-                    nana::system::dataexch().set(item.second);
+                    nana::system::dataexch().set(converter.to_bytes(item.second));
                     break;
                 }
             }
