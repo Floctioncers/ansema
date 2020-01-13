@@ -11,8 +11,7 @@ Cryptopp projects.
 
 ### Prerequisites
 
-You'll need CMake version 3.14 (older version may function as well) and C++17
-compiler - tested with MingW and Microsoft C++ compiler.
+You'll need Visual Studio 2019, that should be all.
 
 ### Application Manual
 
