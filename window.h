@@ -205,7 +205,7 @@ namespace Window
             for (std::size_t i = 0; i < output.size(); ++i)
             {
                 auto const in{ input->getline(0) };
-                auto const out{ pass.Generate(std::move(in)) };
+                auto const out{ pass.Generate(in) };
                 output[i]->select(true);
                 output[i]->del();
                 output[i]->append(out.value_or("INVALID"), false);
