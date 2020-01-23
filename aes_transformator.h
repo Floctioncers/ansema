@@ -61,7 +61,7 @@ namespace AesTransformator
             AES::Encryption e{};
             e.SetKey(key, key.size());
             std::string out{};
-            auto encryptor = CryptoPP::StringSource{ plain, true, new Filter{ e, new Sink{ out } } };
+            auto encryptor = CryptoPP::StringSource{ plain, true, new Filter{ e, new Sink{ out }, CryptoPP::BlockPaddingSchemeDef::BlockPaddingScheme::PKCS_PADDING } };
             return out;
         }
 
@@ -70,7 +70,7 @@ namespace AesTransformator
             AES::Decryption d{};
             d.SetKey(key, key.size());
             std::string out{};
-            auto decryptor = CryptoPP::StringSource{ encrypted, true, new Filter{ d, new Sink{ out } } };
+            auto decryptor = CryptoPP::StringSource{ encrypted, true, new Filter{ d, new Sink{ out }, CryptoPP::BlockPaddingSchemeDef::BlockPaddingScheme::PKCS_PADDING } };
             return out;
         }
 
