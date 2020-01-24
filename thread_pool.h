@@ -307,7 +307,6 @@ namespace ThreadPool
             auto tmp = tempFile(this->path);
             std::ofstream stream{ tmp, std::fstream::out | std::fstream::binary };
             stream.write(reinterpret_cast<char const *>(msg.data()), msg.size() * sizeof(T));
-			stream.flush();
 			stream.close();
             std::filesystem::rename(tmp, this->path);
         }

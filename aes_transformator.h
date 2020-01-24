@@ -144,7 +144,9 @@ namespace AesTransformator
 			}
 
             for (auto &&item : temp)
+            {
                 out.push_back(std::move(item));
+            }
 
             auto p{ path };
             stream.Write(std::move(p), std::move(out));

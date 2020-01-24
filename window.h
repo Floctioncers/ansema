@@ -335,11 +335,6 @@ namespace Window
             }
         }
 
-		void makeEdit()
-		{
-
-		}
-
 		void makeView()
 		{
 			view->editable(false);
@@ -423,7 +418,6 @@ namespace Window
 			change{ GenerateChild<button>(window.Form()) },
 			editting{ false }, blocks{}
 		{
-			makeEdit();
 			makeView();
 			makeChange();
 			add();
@@ -442,9 +436,11 @@ namespace Window
 			for (std::size_t i = 0; i < lines; ++i)
 			{
 				auto temp = edit->getline(i);
-				if (temp.has_value())
-					txt.append(temp.value());
-				txt.push_back('\n');
+                if (temp.has_value())
+                {
+                    txt.append(temp.value());
+                    txt.push_back('\n');
+                }
 			}
 			return txt;
 		}
@@ -576,11 +572,6 @@ namespace Window
             });
         }
 
-        void makeText()
-        {
-			//TODO
-        }
-
         void add()
         {
             window.Layout()["open"] << *opener;
@@ -599,7 +590,6 @@ namespace Window
             makeSaver();
             makeSaveAser();
             makeOpener();
-            makeText();
             add();
         }
 
